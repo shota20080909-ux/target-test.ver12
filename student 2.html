@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>生徒用ページ - 単語テスト</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>生徒用ページ</h1>
+    <div class="container">
+        <div id="unitSelectSection">
+            <h2>単元を選択</h2>
+            <select id="unitSelect">
+                <option value="">-- 単元を選んでください --</option>
+            </select>
+            <button id="startBtn">テスト開始</button>
+        </div>
+
+        <div id="quizSection" style="display:none;">
+            <h2 id="unitTitle"></h2>
+            <p id="question"></p>
+            <input type="text" id="answerInput" placeholder="英語で入力">
+            <button id="answerBtn">答える</button>
+            <button id="nextBtn" style="display:none;">次へ</button>
+            <button id="finishBtn">終了</button>
+            <p id="feedback"></p>
+        </div>
+    </div>
+
+    <script>
+        const unitSelect = document.getElementById("unitSelect");
+        const startBtn = document.getElementById("startBtn");
+        const quizSection = document.getElementById("quizSection");
+        const question = document.getElementById("question");
+        const answerInput = document.getElementById("answerInput");
+        const answerBtn = document.getElementById("answerBtn");
+        const nextBtn = document.getElementById("nextBtn");
+        const feedback = document.getElementById("feedback");
+        const unitTitle = document.getElementById("unitTitle");
+        const finishBtn = document.getElementById("finishBtn");
+
+        let currentUnit = [];
+        let currentIndex = 0;
+        let wrongList = [];
+
+        const units = JSON.parse(localStorage.getItem("units")) || {};
+
+        // 単元一覧表示
+        for (const unit in units) {
+            const option = document.createElement("option");
+            option.value = unit;
+            option.textContent = unit;
+            unitSelect.appendChild(option);
+        }
+
+        startBtn.onclick = () => {
+            const selected = unitSelect.value;
+            if (!selected) {
+                alert("単元を選んでください。");
+                return;
+            }
+            currentUnit = [...units[selected]];
+            unitTitle.textContent = selected;
+            currentIndex = 0;
+            wrongList = [];
+            document.getElementById("unitSelectSection").style.display = "none";
+            quizSection.style.display = "block";
+            showQuestion();
+        };
+
+        function showQuestion() {
+            if (currentIndex < currentUnit.length) {
+                question.textContent = `${currentUnit[currentIndex].jp} → 英語で？`;
+                answerInput.value = "";
+                feedback.textContent = "";
+                answerBtn.style.display = "inline-block";
+                nextBtn.style.display = "none";
+                answerInput.focus();
+            } else {
+                if (wrongList.length > 0) {
+                    currentUnit = wrongList;
+                    wrongList = [];
+                    currentIndex = 0;
+                    alert("間違えた問題をもう一度やりましょう。");
+                    showQuestion();
+                } else {
+                    alert("全問正解！テスト終了です。");
+                    location.reload();
+                }
+            }
+        }
+
+        function checkAnswer() {
+            const ans = answerInput.value.trim().toLowerCase();
+            const correct = currentUnit[currentIndex].en.toLowerCase();
+            if (ans === correct) {
+                feedback.textContent = "⭕ 正解！";
+                feedback.style.color = "green";
+            } else {
+                feedback.textContent = `❌ 不正解。正解は「${correct}」`;
+                feedback.style.color = "red";
+                wrongList.push(currentUnit[currentIndex]);
+            }
+            answerBtn.style.display = "none";
+            nextBtn.style.display = "inline-block";
+        }
+
+        answerBtn.onclick = checkAnswer;
+        nextBtn.onclick = () => {
+            currentIndex++;
+            showQuestion();
+        };
+        finishBtn.onclick = () => location.reload();
+        answerInput.addEventListener("keydown", e => {
+            if (e.key === "Enter" && answerBtn.style.display !== "none") {
+                checkAnswer();
+            } else if (e.key === "Enter" && nextBtn.style.display !== "none") {
+                currentIndex++;
+                showQuestion();
+            }
+        });
+    </script>
+</body>
+</html>
